@@ -120,18 +120,24 @@ class ProjectList {
         this.element.id = `${this.type}-projects`
         //this is the listeners to add the projects to the list
         projectState.addListener((projects: Project[]) => {
-            this.assignedProjects = projects
+            //filtering
+            const relevantProjects = projects.filter(project => { 
+                if (this.type === 'active') {                    
+                    return project.status === ProjectStatus.Active
+                }
+                return project.status === ProjectStatus.Finished            
+            })
+            this.assignedProjects = relevantProjects
             this.renderProjects()
         })
-
 
         this.attach()
         this.renderContent()
     }
 
     private renderProjects() {
-        console.log('assigned', this.assignedProjects)
         const listEl = document.getElementById(`${this.type}-projects-list`)! as HTMLUListElement
+        listEl.innerHTML = ''
         for (const projectItem of this.assignedProjects) {
             const listItem = document.createElement('li')
             listItem.textContent = projectItem.title
