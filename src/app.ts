@@ -9,7 +9,7 @@ interface Draggable {
 interface DragTarget {
     dragOverHandler(event: DragEvent): void;
     dropHandler(event: DragEvent): void;
-    dragLeaveHandler(event: DragTarget): void;
+    dragLeaveHandler(event: DragEvent): void;
 }
 
 //project type
@@ -178,15 +178,17 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements 
 
     @autobind
     dragStartHandler(event: DragEvent): void {
-        console.log(event)
+        event.dataTransfer!.setData('text/plain', this.project.id)
+        event.dataTransfer!.effectAllowed = 'move'
     }
 
-    dragEndHandler(event: DragEvent): void {
-        console.log(event)
+    dragEndHandler(_: DragEvent): void {
+        console.log('draged')
     }
 
     configure(): void {
         this.element.addEventListener('dragstart', this.dragStartHandler)
+        this.element.addEventListener('dragend', this.dragEndHandler)
     }
 
     renderContent(): void {
@@ -196,7 +198,7 @@ class ProjectItem extends Component<HTMLUListElement, HTMLLIElement> implements 
     }
 }
 
-class ProjectList extends Component<HTMLDivElement, HTMLElement>{
+class ProjectList extends Component<HTMLDivElement, HTMLElement> implements DragTarget{
     assignedProjects:Project[]
 
     constructor(private type: 'active' | 'finished') {
@@ -207,7 +209,30 @@ class ProjectList extends Component<HTMLDivElement, HTMLElement>{
         this.renderContent()
     }
 
+    @autobind
+    dragOverHandler(event: DragEvent): void {
+        if(event.dataTransfer && event.dataTransfer.types[0] === 'text/plain') {
+            event.preventDefault()
+            const listEl = this.element.querySelector('ul')!
+            listEl?.classList.add('droppable')
+        }
+       
+    }   
+
+    dropHandler(event: DragEvent): void {
+        console.log(event.dataTransfer!.getData('text/plain'))
+    }
+
+    @autobind
+    dragLeaveHandler(_: DragEvent): void {
+        const listEl = this.element.querySelector('ul')!
+        listEl?.classList.remove('droppable')
+    }
+
     configure() {        
+        this.element.addEventListener('dragover', this.dragOverHandler)
+        this.element.addEventListener('dragleave', this.dragLeaveHandler)
+        this.element.addEventListener('drop', this.dropHandler)
         //this is the listeners to add the projects to the list
         projectState.addListener((projects: Project[]) => {
             //filtering
